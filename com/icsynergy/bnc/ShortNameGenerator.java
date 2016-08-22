@@ -15,8 +15,14 @@ public class ShortNameGenerator {
         if (strFirst == null || strLast == null || strFirst.isEmpty() || strLast.isEmpty())
             throw new IllegalArgumentException("name should not be null or empty");
 
-        String strNormF = Normalizer.normalize(strFirst, Normalizer.Form.NFD).replaceAll("[^\\p{ASCII}]","").trim();
-        String strNormL = Normalizer.normalize(strLast, Normalizer.Form.NFD).replaceAll("[^\\p{ASCII}]","").trim();
+        String strNormF =
+                Normalizer.normalize(strFirst, Normalizer.Form.NFD)
+                        .replaceAll("[^a-zA-Z]","")
+                        .trim();
+        String strNormL =
+                Normalizer.normalize(strLast, Normalizer.Form.NFD)
+                        .replaceAll("[^a-zA-Z]","")
+                        .trim();
         String woNumber = strNormL.substring(0, strNormL.length() < 3 ? strNormL.length() : 3) + strNormF.charAt(0);
 
         String strFormat = "%0" + (7 - woNumber.length()) + "d";

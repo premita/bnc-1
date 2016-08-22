@@ -6,6 +6,8 @@ public class Constants {
         public static final String SHORT_NAME = "ShortName";
         public static final String FirstNameUsed = "FirstNameUsed";
         public static final String LastNameUsed = "LastNameUsed";
+        public static final String MailUniquePrefix = "MailUniquePrefix";
+        public static final String ManagedEmails = "BNCManagedEmails";
     }
 
     public class CoucheAttributes {

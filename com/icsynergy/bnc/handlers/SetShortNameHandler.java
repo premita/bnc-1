@@ -44,6 +44,12 @@ public class SetShortNameHandler implements PostProcessHandler{
         return new EventResult();
     }
 
+    /**
+     * Assign short name to OIM user login
+     * @param strUserKey - user key
+     * @param firstName - first name
+     * @param lastName - last name
+     */
     private void setShortName(String strUserKey, String firstName, String lastName) {
         log.entering(getClass().getName(), "setShortName");
         int iNum = 1;
@@ -57,7 +63,7 @@ public class SetShortNameHandler implements PostProcessHandler{
 
                 SearchCriteria crit =
                         new SearchCriteria(
-                                Constants.UserAttributes.SHORT_NAME,
+                                UserManagerConstants.AttributeName.USER_LOGIN.getId(),
                                 strShortName,
                                 SearchCriteria.Operator.EQUAL);
 
@@ -79,8 +85,8 @@ public class SetShortNameHandler implements PostProcessHandler{
 
         User usr = new User(strUserKey);
 
-        log.finest("Setting ShortName=" + strShortName + " for usr_key=" + usr.getEntityId());
-        usr.setAttribute(Constants.UserAttributes.SHORT_NAME, strShortName);
+        log.finest("Setting usr_login=" + strShortName + " for usr_key=" + usr.getEntityId());
+        usr.setAttribute(UserManagerConstants.AttributeName.USER_LOGIN.getId(), strShortName);
         try {
             um.modify(usr);
             log.fine("ShortName assigned");
