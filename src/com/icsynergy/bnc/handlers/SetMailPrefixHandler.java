@@ -1,5 +1,6 @@
 package com.icsynergy.bnc.handlers;
 
+import com.icsynergy.bnc.Constants;
 import oracle.iam.identity.exception.NoSuchUserException;
 import oracle.iam.identity.exception.UserModifyException;
 import oracle.iam.identity.exception.UserSearchException;
@@ -19,12 +20,15 @@ import javax.naming.directory.SearchControls;
 import javax.naming.directory.SearchResult;
 import java.io.Serializable;
 import java.text.Normalizer;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static com.icsynergy.bnc.Constants.UserAttributes.ISMLogin;
 import static com.icsynergy.bnc.Constants.UserAttributes.MailUniquePrefix;
+import static com.icsynergy.bnc.Constants.UserAttributes.RESupn;
 
 public class SetMailPrefixHandler implements PostProcessHandler {
     final private Logger log = Logger.getLogger("com.icsynergy");
@@ -58,11 +62,12 @@ public class SetMailPrefixHandler implements PostProcessHandler {
             processUser(
                     orchestration.getTarget().getEntityId(),
                     String.valueOf(orchestration.getParameters().get(UserManagerConstants.AttributeName.FIRSTNAME.getId())),
-                    String.valueOf(orchestration.getParameters().get(UserManagerConstants.AttributeName.LASTNAME.getId()))
-                    );
+                    String.valueOf(orchestration.getParameters().get(UserManagerConstants.AttributeName.LASTNAME.getId())),
+                    String.valueOf(orchestration.getParameters().get(UserManagerConstants.AttributeName.LOCALE.getId()))
+            );
         } catch (NamingException e) {
             log.log(Level.SEVERE, "Exception working with contexts", e);
-            throw new EventFailedException("Exception working with contexts", e);
+            throw new EventFailedException("Exception working with contexts", null, e);
         } finally {
             try {
                 ctxLbg.close();
@@ -102,12 +107,13 @@ public class SetMailPrefixHandler implements PostProcessHandler {
                 processUser(
                         allEntityId[i],
                         String.valueOf(bulkParameters[i].get(UserManagerConstants.AttributeName.FIRSTNAME.getId())),
-                        String.valueOf(bulkParameters[i].get(UserManagerConstants.AttributeName.LASTNAME.getId()))
-                        );
+                        String.valueOf(bulkParameters[i].get(UserManagerConstants.AttributeName.LASTNAME.getId())),
+                        String.valueOf(bulkParameters[i].get(UserManagerConstants.AttributeName.LOCALE.getId()))
+                );
             }
         } catch (NamingException e) {
             log.log(Level.SEVERE, "Exception working with contexts", e);
-            throw new EventFailedException("Exception working with contexts", e);
+            throw new EventFailedException("Exception working with contexts", null, e);
         } finally {
             try {
                 ctxLbg.close();
@@ -230,7 +236,7 @@ public class SetMailPrefixHandler implements PostProcessHandler {
         return false;
     }
 
-    private void processUser(String strUserKey, String strFirstName, String strLastName) {
+    private void processUser(String strUserKey, String strFirstName, String strLastName, String strLocale) {
         log.entering(getClass().getName(), "processUser");
 
         final String strDedupChars = "BCDFGHJKLMNPRSTUVWZXQOYIEA";
@@ -257,8 +263,8 @@ public class SetMailPrefixHandler implements PostProcessHandler {
 
         do {
             strPrefix = i++ < 0
-                    ? String.format("%s.%s", strFName, strLName)
-                    : String.format("%s%s.%s", strFName, strDedupChars.charAt(i++), strLName);
+                    ? String.format("%s.%s", strFName, strLName).toLowerCase()
+                    : String.format("%s%s.%s", strFName, strDedupChars.charAt(i++), strLName).toLowerCase();
             log.finer("strPrefix=" + strPrefix);
 
             // true if any of searches return true
@@ -284,16 +290,35 @@ public class SetMailPrefixHandler implements PostProcessHandler {
         if (bTaken)
             throw new EventFailedException("Deduplication character limit reached to generate a unique BNC Mail Prefix");
 
+        // array of mail domains for different languages
+        String[] arEmails = new String[] {
+                strPrefix + "@nbc.ca", strPrefix + "@bnc.ca"
+        };
+
+        log.finer("emails=" + Arrays.asList(arEmails).toString());
+
+
         // otherwise save
         User u = new User(strUserKey);
         u.setAttribute(MailUniquePrefix, strPrefix);
 
-        log.log(Level.FINEST, "saving {0} to {1}", new String[]{strPrefix, MailUniquePrefix});
+        // email address based on locale
+        String strEmailAddr = strLocale.toLowerCase().startsWith("en") ? arEmails[0] : arEmails[1];
+        log.finer("email_addr=" + strEmailAddr);
+        u.setAttribute(UserManagerConstants.AttributeName.EMAIL.getId(), strEmailAddr);
+        u.setAttribute(RESupn, strEmailAddr);
+        u.setAttribute(ISMLogin, strEmailAddr);
+
+        // comma separated list of emails
+        final String strEmailList = Arrays.asList(arEmails).toString().replaceAll("[\\[\\]]", "");
+        u.setAttribute(Constants.UserAttributes.ManagedEmails, strEmailList);
+
+        log.log(Level.FINEST, "saving {0} to {1}", new String[]{ u.getAttributes().toString(), MailUniquePrefix});
         try {
             um.modify(u);
         } catch (ValidationFailedException | NoSuchUserException | UserModifyException e1) {
             log.log(Level.SEVERE, "Exception modifying the user", e1);
-            throw new EventFailedException("Exception modifying the user", e1);
+            throw new EventFailedException("Exception modifying the user", null, e1);
         }
     }
 }

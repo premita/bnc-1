@@ -8,10 +8,18 @@ public class Constants {
         public static final String LastNameUsed = "LastNameUsed";
         public static final String MailUniquePrefix = "MailUniquePrefix";
         public static final String ManagedEmails = "BNCManagedEmails";
+        public static final String ISMLogin = "ISMLogin";
+        public static final String RESupn = "RESUserPrincipalName";
     }
 
     public class CoucheAttributes {
         public static final String FirstNameUsed = "First Name Used";
         public static final String LastNameUsed = "Last Name Used";
+        public static final String PrefLang = "Preferred Language";
+    }
+
+    public class UmsAttributes {
+        public static final String UserLang = "Locale";
     }
 }
+
