@@ -10,7 +10,7 @@ public class Constants {
         public static final String ManagedEmails = "BNCManagedEmails";
         public static final String ISMLogin = "ISMLogin";
         public static final String RESupn = "RESUserPrincipalName";
-        public static final String EMP_MNGR = "EmployeeManager";
+        public static final String EMP_MNGR = "EmployeeManager";		
     }
 
     public class CoucheAttributes {
